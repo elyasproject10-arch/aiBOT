@@ -20,6 +20,8 @@ export interface Plan {
   name: string;
   duration_days: number;
   price: number; // Toman
+  payping_product_url?: string; // Direct link created in https://app.payping.ir/myShop/product/create
+  payping_product_code?: string; // Unique product code or ID in PayPing
   is_active: boolean;
   display_order: number;
 }

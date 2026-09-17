@@ -290,16 +290,29 @@ export const BotSimulatorView: React.FC<BotSimulatorViewProps> = ({
                     <span className="text-slate-300 font-bold">مبلغ قابل پرداخت:</span>
                     <span className="font-bold text-emerald-400 text-sm">{selectedPlan.price.toLocaleString('fa-IR')} تومان</span>
                   </div>
+
+                  {selectedPlan.payping_product_url && (
+                    <div className="p-2 rounded-lg bg-sky-950/40 border border-sky-500/30 text-[11px] text-sky-300">
+                      🔗 <b>لینک اختصاصی آیتم مالی PayPing:</b>
+                      <div className="font-mono text-[10px] text-sky-400 truncate mt-0.5">
+                        {selectedPlan.payping_product_url}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  id="btn-simulate-payping-click"
-                  onClick={handlePayNow}
-                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all"
-                >
-                  <DollarSign className="w-4 h-4" />
-                  💳 پرداخت آنلاین فاکتور در درگاه شاپرک PayPing
-                </button>
+                <div className="space-y-2">
+                  <button
+                    id="btn-simulate-payping-click"
+                    onClick={handlePayNow}
+                    className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    {selectedPlan.payping_product_url
+                      ? '💳 باز کردن لینک مستقیم محصول در PayPing (شبیه‌سازی پرداخت)'
+                      : '💳 پرداخت آنلاین فاکتور در درگاه شاپرک PayPing'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

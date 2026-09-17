@@ -37,11 +37,11 @@ const INITIAL_PRODUCTS: Product[] = [
 ];
 
 const INITIAL_PLANS: Plan[] = [
-  { id: 1, product_id: 1, name: 'پلن ۱ ماهه استاندارد', duration_days: 30, price: 390000, is_active: true, display_order: 1 },
-  { id: 2, product_id: 1, name: 'پلن ۳ ماهه اقتصادی', duration_days: 90, price: 1050000, is_active: true, display_order: 2 },
-  { id: 3, product_id: 1, name: 'پلن ۶ ماهه نقره‌ای', duration_days: 180, price: 1980000, is_active: true, display_order: 3 },
-  { id: 4, product_id: 2, name: 'پلن ۱ ماهه اختصاصی', duration_days: 30, price: 350000, is_active: true, display_order: 1 },
-  { id: 5, product_id: 2, name: 'پلن ۳ ماهه اختصاصی', duration_days: 90, price: 950000, is_active: true, display_order: 2 },
+  { id: 1, product_id: 1, name: 'پلن ۱ ماهه استاندارد', duration_days: 30, price: 390000, payping_product_url: 'https://payp.in/prod/gpt-1m', payping_product_code: 'gpt-1m', is_active: true, display_order: 1 },
+  { id: 2, product_id: 1, name: 'پلن ۳ ماهه اقتصادی', duration_days: 90, price: 1050000, payping_product_url: 'https://payp.in/prod/gpt-3m', payping_product_code: 'gpt-3m', is_active: true, display_order: 2 },
+  { id: 3, product_id: 1, name: 'پلن ۶ ماهه نقره‌ای', duration_days: 180, price: 1980000, payping_product_url: 'https://payp.in/prod/gpt-6m', payping_product_code: 'gpt-6m', is_active: true, display_order: 3 },
+  { id: 4, product_id: 2, name: 'پلن ۱ ماهه اختصاصی', duration_days: 30, price: 350000, payping_product_url: 'https://payp.in/prod/gemini-1m', payping_product_code: 'gemini-1m', is_active: true, display_order: 1 },
+  { id: 5, product_id: 2, name: 'پلن ۳ ماهه اختصاصی', duration_days: 90, price: 950000, payping_product_url: 'https://payp.in/prod/gemini-3m', payping_product_code: 'gemini-3m', is_active: true, display_order: 2 },
 ];
 
 const INITIAL_USERS: User[] = [
