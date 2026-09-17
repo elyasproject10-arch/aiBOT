@@ -1,0 +1,241 @@
+import datetime
+import json
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from backend.core.database import get_db
+from backend.models.database_models import User, Product, Plan, Subscription, Payment, SystemSetting
+from backend.services.subscription_service import SubscriptionService
+
+router = APIRouter(prefix="/api/admin", tags=["Admin"])
+
+class ActivationPayload(BaseModel):
+    admin_notes: str = ""
+
+class SubscriptionUpdatePayload(BaseModel):
+    status: str
+    admin_notes: str = ""
+    extend_days: int = 0
+
+class ProductPayload(BaseModel):
+    name: str
+    slug: str
+    description: str = ""
+    is_active: bool = True
+    required_fields: list = []
+
+class PlanPayload(BaseModel):
+    product_id: int
+    name: str
+    duration_days: int
+    price: int
+    is_active: bool = True
+    display_order: int = 0
+
+class SettingPayload(BaseModel):
+    key: str
+    value: str
+
+# 1. Statistics
+@router.get("/stats")
+def get_dashboard_stats(db: Session = Depends(get_db)):
+    now = datetime.datetime.utcnow()
+    start_of_day = datetime.datetime(now.year, now.month, now.day)
+    start_of_month = datetime.datetime(now.year, now.month, 1)
+
+    today_sales = db.query(func.sum(Payment.amount)).filter(Payment.status == "SUCCESS", Payment.created_at >= start_of_day).scalar() or 0
+    month_sales = db.query(func.sum(Payment.amount)).filter(Payment.status == "SUCCESS", Payment.created_at >= start_of_month).scalar() or 0
+    total_sales = db.query(func.sum(Payment.amount)).filter(Payment.status == "SUCCESS").scalar() or 0
+
+    active_count = db.query(Subscription).filter(Subscription.status == "ACTIVE").count()
+    pending_count = db.query(Subscription).filter(Subscription.status == "PENDING_ACTIVATION").count()
+    expired_count = db.query(Subscription).filter(Subscription.status == "EXPIRED").count()
+    total_users = db.query(User).count()
+
+    # Expiring in 5 days
+    five_days_ahead = now + datetime.timedelta(days=5)
+    expiring_soon_count = db.query(Subscription).filter(
+        Subscription.status == "ACTIVE",
+        Subscription.end_date.between(now, five_days_ahead)
+    ).count()
+
+    return {
+        "today_sales": today_sales,
+        "month_sales": month_sales,
+        "total_sales": total_sales,
+        "active_users": active_count,
+        "pending_activation": pending_count,
+        "expired_users": expired_count,
+        "expiring_soon": expiring_soon_count,
+        "total_users": total_users
+    }
+
+# 2. Subscriptions
+@router.get("/subscriptions")
+def list_subscriptions(status: str = None, search: str = None, db: Session = Depends(get_db)):
+    q = db.query(Subscription).join(User).join(Product).join(Plan)
+    if status:
+        q = q.filter(Subscription.status == status)
+    if search:
+        q = q.filter((User.name.ilike(f"%{search}%")) | (User.phone.ilike(f"%{search}%")) | (User.email.ilike(f"%{search}%")))
+    
+    subs = q.order_by(Subscription.id.desc()).limit(100).all()
+    results = []
+    for s in subs:
+        results.append({
+            "id": s.id,
+            "user": {
+                "id": s.user.id,
+                "name": s.user.name,
+                "phone": s.user.phone,
+                "email": s.user.email,
+                "telegram_id": s.user.telegram_id,
+                "bale_id": s.user.bale_id
+            },
+            "product": {"id": s.product.id, "name": s.product.name, "slug": s.product.slug},
+            "plan": {"id": s.plan.id, "name": s.plan.name, "duration_days": s.plan.duration_days, "price": s.plan.price},
+            "status": s.status,
+            "source_platform": s.source_platform,
+            "customer_info": json.loads(s.customer_info) if s.customer_info else {},
+            "start_date": s.start_date.isoformat() if s.start_date else None,
+            "end_date": s.end_date.isoformat() if s.end_date else None,
+            "admin_notes": s.admin_notes,
+            "auto_renew_count": s.auto_renew_count,
+            "created_at": s.created_at.isoformat()
+        })
+    return results
+
+@router.post("/subscriptions/{sub_id}/activate")
+async def activate_subscription(sub_id: int, payload: ActivationPayload, db: Session = Depends(get_db)):
+    success, msg = await SubscriptionService.activate_subscription(db, sub_id, payload.admin_notes)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"message": msg}
+
+@router.patch("/subscriptions/{sub_id}")
+def update_subscription(sub_id: int, payload: SubscriptionUpdatePayload, db: Session = Depends(get_db)):
+    sub = db.query(Subscription).filter(Subscription.id == sub_id).first()
+    if not sub:
+        raise HTTPException(status_code=404, detail="اشتراک یافت نشد.")
+    
+    sub.status = payload.status
+    if payload.admin_notes:
+        sub.admin_notes = payload.admin_notes
+    if payload.extend_days > 0 and sub.end_date:
+        sub.end_date = sub.end_date + datetime.timedelta(days=payload.extend_days)
+        sub.auto_renew_count += 1
+    
+    db.commit()
+    return {"message": "اشتراک به‌روزرسانی شد."}
+
+# 3. Users
+@router.get("/users")
+def list_users(search: str = None, db: Session = Depends(get_db)):
+    q = db.query(User)
+    if search:
+        q = q.filter((User.name.ilike(f"%{search}%")) | (User.phone.ilike(f"%{search}%")) | (User.email.ilike(f"%{search}%")))
+    users = q.order_by(User.id.desc()).limit(100).all()
+    return [
+        {
+            "id": u.id,
+            "name": u.name,
+            "phone": u.phone,
+            "email": u.email,
+            "telegram_id": u.telegram_id,
+            "bale_id": u.bale_id,
+            "subscriptions_count": len(u.subscriptions),
+            "created_at": u.created_at.isoformat()
+        } for u in users
+    ]
+
+# 4. Products & Plans
+@router.get("/products")
+def list_products(db: Session = Depends(get_db)):
+    products = db.query(Product).all()
+    res = []
+    for p in products:
+        res.append({
+            "id": p.id,
+            "name": p.name,
+            "slug": p.slug,
+            "description": p.description,
+            "is_active": p.is_active,
+            "required_fields": json.loads(p.required_fields) if p.required_fields else [],
+            "plans": [
+                {
+                    "id": pl.id,
+                    "name": pl.name,
+                    "duration_days": pl.duration_days,
+                    "price": pl.price,
+                    "is_active": pl.is_active,
+                    "display_order": pl.display_order
+                } for pl in p.plans
+            ]
+        })
+    return res
+
+@router.post("/products")
+def create_product(payload: ProductPayload, db: Session = Depends(get_db)):
+    p = Product(
+        name=payload.name,
+        slug=payload.slug,
+        description=payload.description,
+        is_active=payload.is_active,
+        required_fields=json.dumps(payload.required_fields, ensure_ascii=False)
+    )
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    return {"message": "محصول با موفقیت افزوده شد", "id": p.id}
+
+@router.post("/plans")
+def create_plan(payload: PlanPayload, db: Session = Depends(get_db)):
+    pl = Plan(
+        product_id=payload.product_id,
+        name=payload.name,
+        duration_days=payload.duration_days,
+        price=payload.price,
+        is_active=payload.is_active,
+        display_order=payload.display_order
+    )
+    db.add(pl)
+    db.commit()
+    db.refresh(pl)
+    return {"message": "پلن افزوده شد", "id": pl.id}
+
+# 5. Payments
+@router.get("/payments")
+def list_payments(db: Session = Depends(get_db)):
+    payments = db.query(Payment).order_by(Payment.id.desc()).limit(100).all()
+    return [
+        {
+            "id": p.id,
+            "subscription_id": p.subscription_id,
+            "user_name": p.user.name if p.user else "-",
+            "user_phone": p.user.phone if p.user else "-",
+            "amount": p.amount,
+            "client_ref_id": p.client_ref_id,
+            "ref_id": p.ref_id,
+            "status": p.status,
+            "created_at": p.created_at.isoformat(),
+            "paid_at": p.paid_at.isoformat() if p.paid_at else None
+        } for p in payments
+    ]
+
+# 6. Settings
+@router.get("/settings")
+def get_settings(db: Session = Depends(get_db)):
+    settings_list = db.query(SystemSetting).all()
+    return {s.key: s.value for s in settings_list}
+
+@router.post("/settings")
+def update_setting(payload: SettingPayload, db: Session = Depends(get_db)):
+    s = db.query(SystemSetting).filter(SystemSetting.key == payload.key).first()
+    if s:
+        s.value = payload.value
+    else:
+        s = SystemSetting(key=payload.key, value=payload.value)
+        db.add(s)
+    db.commit()
+    return {"message": "تنظیمات ذخیره شد."}
