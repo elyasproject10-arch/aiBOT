@@ -134,11 +134,43 @@ export class StorageService {
   }
 
   static getSettings(): SystemSettings {
-    return this.getItem<SystemSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    const local = this.getItem<SystemSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    // Fetch latest from backend asynchronously in background
+    fetch('/api/admin/settings')
+      .then(res => res.ok ? res.json() : null)
+      .then(backendSettings => {
+        if (backendSettings && Object.keys(backendSettings).length > 0) {
+          const merged = { ...local, ...backendSettings };
+          this.setItem(STORAGE_KEYS.SETTINGS, merged);
+        }
+      })
+      .catch(() => {});
+    return local;
   }
 
   static saveSettings(settings: SystemSettings): void {
     this.setItem(STORAGE_KEYS.SETTINGS, settings);
+    // Persist each setting to backend SQLite database
+    const entries = [
+      { key: 'welcome_msg', value: settings.welcome_msg || '' },
+      { key: 'telegram_token', value: settings.telegram_token || '' },
+      { key: 'bale_token', value: settings.bale_token || '' },
+      { key: 'admin_telegram_chat_id', value: settings.admin_telegram_chat_id || '' },
+      { key: 'payping_token', value: settings.payping_token || '' },
+      { key: 'payping_return_url', value: settings.payping_return_url || '' },
+      { key: 'reminder_5d_msg', value: settings.reminder_5d_msg || '' },
+      { key: 'reminder_3d_msg', value: settings.reminder_3d_msg || '' },
+      { key: 'reminder_exp_msg', value: settings.reminder_exp_msg || '' },
+      { key: 'admin_expired_msg', value: settings.admin_expired_msg || '' },
+    ];
+
+    entries.forEach(entry => {
+      fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      }).catch(err => console.error('Failed to sync setting to backend:', entry.key, err));
+    });
   }
 
   static getLogs(): ActivityLog[] {

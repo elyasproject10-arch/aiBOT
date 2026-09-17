@@ -30,6 +30,8 @@ class PlanPayload(BaseModel):
     name: str
     duration_days: int
     price: int
+    payping_product_url: str = ""
+    payping_product_code: str = ""
     is_active: bool = True
     display_order: int = 0
 
@@ -168,6 +170,8 @@ def list_products(db: Session = Depends(get_db)):
                     "name": pl.name,
                     "duration_days": pl.duration_days,
                     "price": pl.price,
+                    "payping_product_url": pl.payping_product_url,
+                    "payping_product_code": pl.payping_product_code,
                     "is_active": pl.is_active,
                     "display_order": pl.display_order
                 } for pl in p.plans
@@ -191,11 +195,17 @@ def create_product(payload: ProductPayload, db: Session = Depends(get_db)):
 
 @router.post("/plans")
 def create_plan(payload: PlanPayload, db: Session = Depends(get_db)):
+    url = payload.payping_product_url.strip() if payload.payping_product_url else None
+    if url and not url.startswith("http://") and not url.startswith("https://"):
+        url = f"https://{url}"
+
     pl = Plan(
         product_id=payload.product_id,
         name=payload.name,
         duration_days=payload.duration_days,
         price=payload.price,
+        payping_product_url=url,
+        payping_product_code=payload.payping_product_code or None,
         is_active=payload.is_active,
         display_order=payload.display_order
     )

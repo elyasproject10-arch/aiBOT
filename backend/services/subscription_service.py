@@ -85,6 +85,13 @@ class SubscriptionService:
             db.add(sub)
             db.flush()
 
+        # If the plan has a direct PayPing product link (e.g. ppng.ir/d/gEQe), use it directly
+        if plan.payping_product_url:
+            direct_url = plan.payping_product_url.strip()
+            if not direct_url.startswith("http://") and not direct_url.startswith("https://"):
+                direct_url = f"https://{direct_url}"
+            return direct_url, None
+
         # Generate unique reference ID
         client_ref_id = f"SUB-{sub.id}-{uuid.uuid4().hex[:6].upper()}"
 

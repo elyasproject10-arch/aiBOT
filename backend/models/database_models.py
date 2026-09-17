@@ -27,6 +27,8 @@ class Plan(Base):
     name = Column(String(100), nullable=False) # e.g. "پلن ۱ ماهه"
     duration_days = Column(Integer, nullable=False) # 30, 60, 90
     price = Column(Integer, nullable=False) # in Tomans
+    payping_product_url = Column(String(255), nullable=True) # Direct payment link e.g. ppng.ir/d/gEQe
+    payping_product_code = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=True)
     display_order = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

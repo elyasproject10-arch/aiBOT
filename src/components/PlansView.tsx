@@ -54,6 +54,11 @@ export const PlansView: React.FC<PlansViewProps> = ({
     e.preventDefault();
     if (!planName) return;
 
+    let cleanUrl = planPaypingUrl.trim();
+    if (cleanUrl && !cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
+
     if (editingPlanId) {
       const updated = plans.map((p) =>
         p.id === editingPlanId
@@ -62,7 +67,7 @@ export const PlansView: React.FC<PlansViewProps> = ({
               name: planName,
               duration_days: planDuration,
               price: planPrice,
-              payping_product_url: planPaypingUrl.trim() || undefined,
+              payping_product_url: cleanUrl || undefined,
               payping_product_code: planPaypingCode.trim() || undefined,
             }
           : p
@@ -75,7 +80,7 @@ export const PlansView: React.FC<PlansViewProps> = ({
         name: planName,
         duration_days: planDuration,
         price: planPrice,
-        payping_product_url: planPaypingUrl.trim() || undefined,
+        payping_product_url: cleanUrl || undefined,
         payping_product_code: planPaypingCode.trim() || undefined,
         is_active: true,
         display_order: filteredPlans.length + 1,
@@ -292,14 +297,14 @@ export const PlansView: React.FC<PlansViewProps> = ({
                   <span className="text-[10px] text-sky-400">از myShop/product</span>
                 </div>
                 <input
-                  type="url"
-                  placeholder="https://payp.in/prod/xxxxx یا https://app.payping.ir/d/xxxxx"
+                  type="text"
+                  placeholder="مثال: ppng.ir/d/gEQe یا https://payp.in/prod/xxxxx"
                   value={planPaypingUrl}
                   onChange={(e) => setPlanPaypingUrl(e.target.value)}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 font-mono text-left focus:outline-none focus:border-indigo-500"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
-                  لینکی که مستقیماً در صفحه ساخت آیتم مالی پی‌پینگ ایجاد کرده‌اید را اینجا قرار دهید تا کاربر مستقیماً به آن هدایت شود.
+                <p className="text-[11px] text-slate-400 mt-1">
+                  پشتیبانی کامل از لینک‌های کوتاه <code className="text-sky-300 font-mono">ppng.ir/d/...</code> و لینک‌های استاندارد PayPing.
                 </p>
               </div>
 
