@@ -149,6 +149,20 @@ export default function App() {
             </button>
 
             <button
+              id="top-btn-clean-fresh"
+              onClick={() => {
+                if (window.confirm('آیا از پاک‌سازی تمامی اطلاعات تستی و بازنشانی به حالت خام (Fresh) اطمینان دارید؟')) {
+                  StorageService.resetToFreshState();
+                  refreshAllData();
+                }
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium cursor-pointer transition-all"
+              title="پاک‌سازی کامل اطلاعات تستی و بازنشانی"
+            >
+              پاک‌سازی داده‌های فیک (Fresh)
+            </button>
+
+            <button
               id="top-btn-refresh"
               onClick={refreshAllData}
               className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white cursor-pointer transition-colors"
