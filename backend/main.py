@@ -77,11 +77,23 @@ app.add_middleware(
 app.include_router(payment_router)
 app.include_router(admin_router)
 
-# Mount static frontend if available
+# Serve admin panel on /admin and /
+@app.get("/admin")
+@app.get("/admin/{full_path:path}")
+def serve_admin_panel():
+    from fastapi.responses import FileResponse
+    if os.path.exists("dist/index.html"):
+        return FileResponse("dist/index.html")
+    elif os.path.exists("index.html"):
+        return FileResponse("index.html")
+    return {"message": "Admin Panel Build is being compiled or dist not found. Please build frontend."}
+
+# Mount static frontend assets if available
 if os.path.exists("dist"):
     app.mount("/", StaticFiles(directory="dist", html=True), name="static")
 
 @app.get("/api/health")
+
 def health():
     return {"status": "ok", "service": "SaaS Subscription Manager", "version": "1.0.0"}
 
