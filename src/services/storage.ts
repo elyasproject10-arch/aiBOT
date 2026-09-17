@@ -51,6 +51,7 @@ const INITIAL_SETTINGS: SystemSettings = {
   payping_token: '',
   payping_return_url: 'http://91.107.137.22:8080/api/payment/callback',
   test_mode: false,
+  welcome_msg: 'سلام {name} عزیز! 👋\nبه سیستم خرید اشتراک هوش مصنوعی خوش آمدید.\nجهت مشاهده و خرید اشتراک روی دکمه زیر کلیک فرمایید:',
   reminder_5d_msg: 'اشتراک شما ۵ روز دیگر به پایان می‌رسد. لطفاً جهت تمدید اقدام فرمایید.',
   reminder_3d_msg: 'یادآوری دوم: ۳ روز تا پایان اشتراک شما باقی مانده است.',
   reminder_exp_msg: 'اشتراک شما امروز به پایان می‌رسد.',

@@ -94,14 +94,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSaveSett
           </div>
         </div>
 
-        {/* Reminders Templates Section */}
+        {/* Reminders & Messages Templates Section */}
         <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-sm">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
             <Bell className="w-4 h-4 text-amber-400" />
-            <h3 className="font-bold text-sm text-white">قالب پیام‌های یادآوری انقضا (اتوماسیون سررسید)</h3>
+            <h3 className="font-bold text-sm text-white">قالب پیام‌ها و متن خوش‌آمدگویی ربات</h3>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-indigo-300 mb-1">
+                متن پیام خوش‌آمدگویی استارت ربات (/start):
+              </label>
+              <textarea
+                rows={3}
+                value={form.welcome_msg || ''}
+                onChange={(e) => setForm({ ...form, welcome_msg: e.target.value })}
+                placeholder="سلام {name} عزیز! به سیستم خرید اشتراک هوش مصنوعی خوش آمدید..."
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-indigo-500/40 text-xs text-slate-200 focus:outline-none focus:border-indigo-400 font-sans"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                می‌توانید از متغیر <code className="text-indigo-400 font-mono">{'{name}'}</code> برای درج خودکار نام کاربر تلگرام استفاده کنید.
+              </span>
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">پیام یادآوری ۵ روز مانده به انقضا (ارسال به کاربر + ادمین):</label>
               <textarea

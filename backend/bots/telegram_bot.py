@@ -7,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from backend.core.config import settings
 from backend.core.database import SessionLocal
-from backend.models.database_models import Product, Plan, User, Subscription
+from backend.models.database_models import Product, Plan, User, Subscription, SystemSetting
 from backend.services.subscription_service import SubscriptionService
 
 logger = logging.getLogger("telegram_bot")
@@ -37,12 +37,29 @@ def setup_telegram_bot():
     @dp.message(Command("start"))
     async def cmd_start(message: types.Message, state: FSMContext):
         await state.clear()
-        welcome_text = (
-            f"سلام <b>{message.from_user.full_name}</b> عزیز! 👋\n\n"
-            f"به سیستم رسمی ارائه اشتراک‌های سازمانی هوش مصنوعی خوش آمدید.\n"
-            f"از طریق این بات می‌توانید اشتراک اختصاصی و سازمانی <b>ChatGPT</b> و <b>Gemini Advanced</b> را با تضمین پایداری و درگاه امن بانکی تهیه فرمایید.\n\n"
-            f"لطفاً از گزینه‌های زیر استفاده فرمایید:"
-        )
+        user_name = message.from_user.full_name or "کاربر"
+        
+        # Check custom welcome message from database
+        db = SessionLocal()
+        custom_welcome = None
+        try:
+            setting = db.query(SystemSetting).filter(SystemSetting.key == "welcome_msg").first()
+            if setting and setting.value:
+                custom_welcome = setting.value
+        except Exception:
+            pass
+        finally:
+            db.close()
+
+        if custom_welcome:
+            welcome_text = custom_welcome.replace("{name}", user_name)
+        else:
+            welcome_text = (
+                f"سلام <b>{user_name}</b> عزیز! 👋\n\n"
+                f"به سیستم خرید اشتراک هوش مصنوعی خوش آمدید.\n"
+                f"جهت مشاهده و خرید اشتراک روی گزینه‌های زیر کلیک فرمایید:"
+            )
+
         await message.answer(welcome_text, parse_mode="HTML", reply_markup=get_main_reply_keyboard())
 
     @dp.message(F.text == "🛍 مشاهده و خرید اشتراک")
